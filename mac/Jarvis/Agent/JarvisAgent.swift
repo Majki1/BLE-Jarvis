@@ -30,9 +30,10 @@ enum JarvisAgent {
         } else {
             return nil
         }
+        let jira: AgentTool = JiraTool.credentials != nil ? JiraTool() : StubJiraTool()
         return AgentRuntime(
             brain: BudgetedBrain(wrapping: brain),
-            tools: [StubCalendarTool(), StubJiraTool(), NewsTool()],
+            tools: [StubCalendarTool(), jira, NewsTool()],
             systemPrompt: systemPrompt)
     }
 }
