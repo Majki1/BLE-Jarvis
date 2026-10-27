@@ -5,6 +5,7 @@ struct JarvisApp: App {
     @State private var engine: PresenceEngine
     @State private var scanner: PresenceScanner
     @State private var performer: BriefingPerformer
+    private let recapWindow = RecapWindowController()
 
     init() {
         let engine = PresenceEngine()
@@ -16,26 +17,31 @@ struct JarvisApp: App {
             voice: ElevenLabsSynthesizer(fallback: SystemSynthesizer()))
         _performer = State(initialValue: performer)
 
-        // Placeholder arrival moment until the agent (MH-5/7) writes real
-        // briefings: first arrival of the session gets the full performance.
+        // Placeholder arrival moment until the agent (MH-7/8) supplies real
+        // briefings and recap sessions.
         var greeted = false
+        let recapWindow = recapWindow
         engine.onEvent = { event in
             guard event == .arrived, !greeted else { return }
             greeted = true
             Task { @MainActor in
+                recapWindow.show(session: .sample)
                 await performer.perform(script: Self.placeholderScript)
             }
         }
         scanner.start()
+        recapWindow.snapshotIfRequested()
     }
 
     var body: some Scene {
         MenuBarExtra("Jarvis", systemImage: symbol) {
             Text(headline)
             Divider()
+            Button("Show recap window") { recapWindow.show(session: .sample) }
             Button("Test briefing") {
                 Task { await performer.perform(script: Self.placeholderScript) }
             }
+            Divider()
             Button("Quit Jarvis") { NSApplication.shared.terminate(nil) }
         }
     }
