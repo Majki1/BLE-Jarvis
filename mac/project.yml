@@ -21,3 +21,21 @@ targets:
         SWIFT_VERSION: "5.10"
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: NO
+  JarvisTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [JarvisTests]
+    dependencies:
+      - target: Jarvis
+    settings:
+      base:
+        SWIFT_VERSION: "5.10"
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Jarvis:
+    build:
+      targets:
+        Jarvis: all
+    test:
+      targets:
+        - JarvisTests
