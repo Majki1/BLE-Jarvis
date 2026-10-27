@@ -64,6 +64,31 @@ struct BriefingPerformerTests {
         #expect(log.calls.last == "music.fadeOut")
     }
 
+    @Test func scriptProviderRunsUnderTheMusicLeadIn() async {
+        let (performer, log, _) = makePerformer(leadIn: 8)
+        var providerStartedAfterMusic = false
+        await performer.perform(withMusic: true) {
+            providerStartedAfterMusic = log.calls.contains("music.start")
+            return "Live briefing"
+        }
+        #expect(providerStartedAfterMusic)
+        #expect(log.calls == [
+            "music.start",
+            "music.duck",
+            "voice.speak(Live briefing)",
+            "music.unduck",
+            "music.fadeOut",
+        ])
+    }
+
+    @Test func failedScriptProviderFallsBackToApology() async {
+        struct Boom: Error {}
+        let (performer, log, _) = makePerformer()
+        await performer.perform(withMusic: true) { throw Boom() }
+        #expect(log.calls.contains("voice.speak(\(BriefingPerformer.fallbackScript))"))
+        #expect(log.calls.last == "music.fadeOut")
+    }
+
     @Test func musiclessPerformSpeaksImmediately() async {
         let (performer, log, _) = makePerformer()
         await performer.perform(script: "Quick note", withMusic: false)

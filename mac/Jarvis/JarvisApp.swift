@@ -17,16 +17,29 @@ struct JarvisApp: App {
             voice: ElevenLabsSynthesizer(fallback: SystemSynthesizer()))
         _performer = State(initialValue: performer)
 
-        // Placeholder arrival moment until the agent (MH-7/8) supplies real
-        // briefings and recap sessions.
-        var greeted = false
+        // Arrival pipeline (MH-7): first arrival of the day gets the full
+        // music-backed briefing composed live by the agent; later arrivals
+        // get the recap window and a short line. Recap *content* is sample
+        // data until MH-8's away-mode triage lands.
         let recapWindow = recapWindow
+        let planner = ArrivalPlanner()
         engine.onEvent = { event in
-            guard event == .arrived, !greeted else { return }
-            greeted = true
+            guard event == .arrived else { return }
             Task { @MainActor in
-                recapWindow.show(session: .sample)
-                await performer.perform(script: Self.placeholderScript)
+                switch planner.momentForArrival() {
+                case .morningBriefing:
+                    recapWindow.show(session: .sample)
+                    await performer.perform(withMusic: true) {
+                        guard let agent = JarvisAgent.make() else {
+                            return Self.placeholderScript
+                        }
+                        return try await agent.run(
+                            "I just arrived at my desk this morning. Compose my morning briefing.")
+                    }
+                case .returnRecap:
+                    recapWindow.show(session: .sample)
+                    await performer.perform(script: "Welcome back.", withMusic: false)
+                }
             }
         }
         scanner.start()
