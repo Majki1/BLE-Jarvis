@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["JarvisBeaconModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.jarvisbeacon.JarvisBeaconModule"]
+  }
+}
