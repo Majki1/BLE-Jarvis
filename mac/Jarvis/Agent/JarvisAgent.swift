@@ -31,9 +31,10 @@ enum JarvisAgent {
             return nil
         }
         let jira: AgentTool = JiraTool.credentials != nil ? JiraTool() : StubJiraTool()
+        let calendar: AgentTool = GoogleOAuth.isConnected ? CalendarTool() : StubCalendarTool()
         return AgentRuntime(
             brain: BudgetedBrain(wrapping: brain),
-            tools: [StubCalendarTool(), jira, NewsTool()],
+            tools: [calendar, jira, NewsTool()],
             systemPrompt: systemPrompt)
     }
 }

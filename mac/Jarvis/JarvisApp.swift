@@ -54,6 +54,11 @@ struct JarvisApp: App {
             Button("Test briefing") {
                 Task { await performer.perform(script: Self.placeholderScript) }
             }
+            if !GoogleOAuth.isConnected {
+                Button("Connect Google Calendar…") {
+                    Task { try? await GoogleOAuth().connect() }
+                }
+            }
             Divider()
             Button("Quit Jarvis") { NSApplication.shared.terminate(nil) }
         }
