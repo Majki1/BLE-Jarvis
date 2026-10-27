@@ -42,7 +42,8 @@ final class OpenAICompatibleBrain: AgentBrain {
         request.httpBody = try JSONEncoder().encode(Payload(
             model: model,
             messages: messages.map(WireMessage.init),
-            tools: tools.isEmpty ? nil : tools.map(WireTool.init)))
+            tools: tools.isEmpty ? nil : tools.map(WireTool.init),
+            max_tokens: 1500))
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
@@ -69,6 +70,7 @@ private struct Payload: Encodable {
     let model: String
     let messages: [WireMessage]
     let tools: [WireTool]?
+    let max_tokens: Int
 }
 
 private struct WireMessage: Encodable {

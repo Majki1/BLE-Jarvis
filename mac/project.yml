@@ -31,6 +31,17 @@ targets:
       base:
         SWIFT_VERSION: "5.10"
         GENERATE_INFOPLIST_FILE: YES
+  JarvisSmoke:
+    type: tool
+    platform: macOS
+    sources:
+      - Smoke
+      - Jarvis/Agent
+      - Jarvis/Tools
+    settings:
+      base:
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_IDENTITY: "-"
 schemes:
   Jarvis:
     build:
