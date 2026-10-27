@@ -1,0 +1,23 @@
+name: Jarvis
+options:
+  bundleIdPrefix: com.msoft.blejarvis
+  deploymentTarget:
+    macOS: "14.0"
+targets:
+  Jarvis:
+    type: application
+    platform: macOS
+    sources: [Jarvis]
+    info:
+      path: Jarvis/Info.plist
+      properties:
+        CFBundleName: Jarvis
+        CFBundleDisplayName: BLE Jarvis
+        LSUIElement: true
+        NSBluetoothAlwaysUsageDescription: Jarvis detects your iPhone's presence over Bluetooth to know when you arrive at and leave your desk.
+        NSMicrophoneUsageDescription: Jarvis listens for your spoken replies after a briefing.
+    settings:
+      base:
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO

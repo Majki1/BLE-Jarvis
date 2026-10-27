@@ -1,0 +1,21 @@
+# Node / Expo
+node_modules/
+.expo/
+dist/
+*.tsbuildinfo
+
+# Xcode / macOS
+mac/Jarvis.xcodeproj/
+DerivedData/
+build/
+*.xcuserdatad/
+.DS_Store
+
+# Mobile native builds (Expo prebuild output is regenerated)
+mobile/ios/
+mobile/android/
+
+# Secrets
+.env
+.env.*
+*.pem
