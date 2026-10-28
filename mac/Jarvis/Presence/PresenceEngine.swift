@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+import os
+
+let presenceLog = Logger(subsystem: "com.msoft.blejarvis", category: "presence")
 
 enum PresenceEvent: Equatable {
     case arrived
@@ -31,9 +34,11 @@ final class PresenceEngine {
     }
 
     func recordSighting(rssi: Int, at date: Date) {
+        presenceLog.debug("sighting rssi=\(rssi) threshold=\(self.rssiThreshold)")
         guard rssi >= rssiThreshold else { return }
         lastQualifyingSighting = date
         if state != .present {
+            presenceLog.info("ARRIVED (rssi \(rssi))")
             state = .present
             onEvent?(.arrived)
         }
@@ -41,7 +46,10 @@ final class PresenceEngine {
 
     func tick(at date: Date) {
         guard state == .present, let lastSeen = lastQualifyingSighting else { return }
-        if date.timeIntervalSince(lastSeen) > graceInterval {
+        let silence = date.timeIntervalSince(lastSeen)
+        presenceLog.debug("tick: \(Int(silence))s since last qualifying sighting")
+        if silence > graceInterval {
+            presenceLog.info("DEPARTED after \(Int(silence))s of silence")
             state = .away
             onEvent?(.departed)
         }

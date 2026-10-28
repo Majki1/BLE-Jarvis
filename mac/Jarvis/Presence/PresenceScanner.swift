@@ -47,9 +47,13 @@ final class PresenceScanner: NSObject {
 
 extension PresenceScanner: CBCentralManagerDelegate {
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        let poweredOn = central.state == .poweredOn
+        let state = central.state
         Task { @MainActor in
-            if poweredOn { self.beginScan() }
+            presenceLog.info("bluetooth state=\(state.rawValue) (5=poweredOn)")
+            if state == .poweredOn {
+                presenceLog.info("scanning for \(JarvisBLE.serviceUUID)")
+                self.beginScan()
+            }
         }
     }
 

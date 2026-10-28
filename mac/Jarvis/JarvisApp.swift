@@ -24,7 +24,11 @@ struct JarvisApp: App {
         let recapWindow = recapWindow
         let planner = ArrivalPlanner()
         engine.onEvent = { event in
-            guard event == .arrived else { return }
+            if event == .departed {
+                // Visible departure: the recap window leaves with you.
+                Task { @MainActor in recapWindow.hide() }
+                return
+            }
             Task { @MainActor in
                 switch planner.momentForArrival() {
                 case .morningBriefing:

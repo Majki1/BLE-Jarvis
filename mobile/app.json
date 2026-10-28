@@ -11,8 +11,11 @@
       "bundleIdentifier": "com.msoft.blejarvis.mobile",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "BLE Jarvis advertises a Bluetooth signal so your Mac knows when you're at your desk.",
-        "UIBackgroundModes": ["bluetooth-peripheral"]
-      }
+        "UIBackgroundModes": [
+          "bluetooth-peripheral"
+        ]
+      },
+      "appleTeamId": "359R7KZAFR"
     },
     "android": {
       "package": "com.msoft.blejarvis.mobile",
