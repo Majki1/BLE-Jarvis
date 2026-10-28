@@ -18,6 +18,8 @@ struct PhraseMatcherTests {
     @Test func matchesDismissals() {
         #expect(PhraseMatcher.match("thanks") == .dismiss)
         #expect(PhraseMatcher.match("That's all") == .dismiss)
+        #expect(PhraseMatcher.match("skip") == .dismiss)
+        #expect(PhraseMatcher.match("skip it") == .dismiss)
         #expect(PhraseMatcher.match("") == .dismiss)
     }
 

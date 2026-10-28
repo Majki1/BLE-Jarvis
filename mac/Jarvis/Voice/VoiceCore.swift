@@ -21,7 +21,7 @@ enum PhraseMatcher {
         let words = Set(cleaned.split(separator: " ").map(String.init))
         let dismissPhrases = ["thanks", "thank you", "thats all", "never mind"]
         if dismissPhrases.contains(where: cleaned.contains)
-            || !words.isDisjoint(with: ["nothing", "no"]) {
+            || !words.isDisjoint(with: ["nothing", "no", "skip"]) {
             return .dismiss
         }
         if words.contains("send") { return .sendIt }
