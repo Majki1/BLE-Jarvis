@@ -6,6 +6,7 @@ struct JarvisApp: App {
     @State private var scanner: PresenceScanner
     @State private var performer: BriefingPerformer
     private let recapWindow = RecapWindowController()
+    private let calibrationWindow = CalibrationWindowController()
 
     init() {
         // Tunables overridable per-machine without rebuilds:
@@ -68,6 +69,9 @@ struct JarvisApp: App {
                 Button("Connect Google Calendar…") {
                     Task { try? await GoogleOAuth().connect() }
                 }
+            }
+            Button("Calibrate away boundary…") {
+                calibrationWindow.show(engine: engine)
             }
             Divider()
             Button("Quit Jarvis") { NSApplication.shared.terminate(nil) }

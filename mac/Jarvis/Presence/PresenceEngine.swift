@@ -27,10 +27,13 @@ final class PresenceEngine {
     // Hysteresis: arrival needs a desk-strength signal; once present, a much
     // weaker signal keeps you present. Prevents both far-away greetings and
     // twitchy departures when you lean back.
-    private let arriveThreshold: Int
-    private let holdThreshold: Int
+    private var arriveThreshold: Int
+    private var holdThreshold: Int
     private let graceInterval: TimeInterval
     private var lastQualifyingSighting: Date?
+
+    // Raw feed for calibration UIs; called for every sighting pre-threshold.
+    var onRawSighting: ((Int) -> Void)?
 
     init(arriveThreshold: Int = -60, holdThreshold: Int = -80,
          graceInterval: TimeInterval = 45) {
@@ -39,7 +42,14 @@ final class PresenceEngine {
         self.graceInterval = graceInterval
     }
 
+    func updateThresholds(arrive: Int? = nil, hold: Int? = nil) {
+        if let arrive { arriveThreshold = arrive }
+        if let hold { holdThreshold = hold }
+        presenceLog.info("thresholds retuned: arrive=\(self.arriveThreshold) hold=\(self.holdThreshold)")
+    }
+
     func recordSighting(rssi: Int, at date: Date) {
+        onRawSighting?(rssi)
         presenceLog.debug("sighting rssi=\(rssi) arrive>=\(self.arriveThreshold) hold>=\(self.holdThreshold)")
         if state == .present {
             if rssi >= holdThreshold { lastQualifyingSighting = date }
