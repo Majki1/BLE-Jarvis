@@ -5,6 +5,7 @@ struct JarvisApp: App {
     @State private var engine: PresenceEngine
     @State private var scanner: PresenceScanner
     @State private var performer: BriefingPerformer
+    @State private var voiceReplies: VoiceReplyCoordinator
     private let recapWindow = RecapWindowController()
     private let calibrationWindow = CalibrationWindowController()
 
@@ -19,10 +20,11 @@ struct JarvisApp: App {
         _engine = State(initialValue: engine)
         let scanner = PresenceScanner(engine: engine)
         _scanner = State(initialValue: scanner)
-        let performer = BriefingPerformer(
-            music: ThemeMusicPlayer(),
-            voice: ElevenLabsSynthesizer(fallback: SystemSynthesizer()))
+        let voice = ElevenLabsSynthesizer(fallback: SystemSynthesizer())
+        let performer = BriefingPerformer(music: ThemeMusicPlayer(), voice: voice)
         _performer = State(initialValue: performer)
+        let voiceReplies = VoiceReplyCoordinator(voice: voice)
+        _voiceReplies = State(initialValue: voiceReplies)
 
         // Arrival pipeline (MH-7/8): first arrival of the day gets the full
         // music-backed briefing composed live by the agent; later arrivals
@@ -57,6 +59,7 @@ struct JarvisApp: App {
                         return try await agent.run(
                             "I just arrived at my desk this morning. Compose my morning briefing.")
                     }
+                    await voiceReplies.listenAndHandle()
                 case .returnRecap:
                     let session = RecapComposer.compose(
                         userName: userName.uppercased(),
@@ -66,6 +69,7 @@ struct JarvisApp: App {
                     recapWindow.show(session: session)
                     await performer.perform(script: RecapComposer.spokenScript(for: session),
                                             withMusic: false)
+                    await voiceReplies.listenAndHandle()
                 }
             }
         }
@@ -88,6 +92,9 @@ struct JarvisApp: App {
             }
             Button("Calibrate away boundary…") {
                 calibrationWindow.show(engine: engine)
+            }
+            Button("Ask Jarvis (voice)") {
+                Task { await voiceReplies.listenAndHandle() }
             }
             Divider()
             Button("Quit Jarvis") { NSApplication.shared.terminate(nil) }
