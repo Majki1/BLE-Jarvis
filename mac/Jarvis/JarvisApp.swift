@@ -31,8 +31,9 @@ struct JarvisApp: App {
         // get a recap of what the away-watcher collected while you were out.
         let recapWindow = recapWindow
         let planner = ArrivalPlanner()
+        let calendarSource = CalendarChangeSource()
         let watcher = AwayWatcher(
-            sources: [JiraChangeSource()],
+            sources: [JiraChangeSource(), calendarSource],
             pollInterval: defaults.object(forKey: "awayPollSeconds") as? TimeInterval ?? 60)
         let userName = defaults.string(forKey: "userName") ?? "Marin"
         engine.onEvent = { event in
@@ -61,14 +62,18 @@ struct JarvisApp: App {
                     }
                     await voiceReplies.listenAndHandle()
                 case .returnRecap:
+                    let freed = await calendarSource.freedSlotEvents()
+                    let suggestion = SuggestionComposer.compose(
+                        freedSlots: freed, profile: WellbeingProfile())
                     let session = RecapComposer.compose(
                         userName: userName.uppercased(),
                         departedAt: departedAt ?? Date(),
                         returnedAt: Date(),
-                        items: items)
+                        items: items,
+                        suggestion: suggestion)
+                    voiceReplies.pendingSuggestion = suggestion
                     recapWindow.show(session: session)
-                    await performer.perform(script: RecapComposer.spokenScript(for: session),
-                                            withMusic: false)
+                    await performer.perform(script: session.caption, withMusic: false)
                     await voiceReplies.listenAndHandle()
                 }
             }

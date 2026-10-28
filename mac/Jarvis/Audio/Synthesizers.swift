@@ -10,9 +10,12 @@ final class ElevenLabsSynthesizer: SpeechSynthesizing {
     private let voiceID: String
     private let fallback: SpeechSynthesizing
 
-    init(voiceID: String = "pNInz6obpgDQGcFmaJgB",
-         fallback: SpeechSynthesizing) {
+    // Default: "George" — ElevenLabs' warm conversational British premade.
+    // Override per-machine: defaults write com.msoft.blejarvis.Jarvis elevenVoiceID <id>
+    init(voiceID: String? = nil, fallback: SpeechSynthesizing) {
         self.voiceID = voiceID
+            ?? UserDefaults.standard.string(forKey: "elevenVoiceID")
+            ?? "JBFqnCBsd6RMkjVDRZzb"
         self.fallback = fallback
     }
 
@@ -42,6 +45,11 @@ final class ElevenLabsSynthesizer: SpeechSynthesizing {
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "text": text,
             "model_id": "eleven_turbo_v2_5",
+            "voice_settings": [
+                "stability": 0.45,
+                "similarity_boost": 0.75,
+                "style": 0.3,
+            ],
         ])
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {

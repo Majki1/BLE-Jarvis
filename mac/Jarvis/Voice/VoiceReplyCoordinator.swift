@@ -8,6 +8,10 @@ final class VoiceReplyCoordinator {
     private let voice: SpeechSynthesizing
     private let recorder = MicRecorder()
     private let transcriber = TranscribeClient()
+    private let profile = WellbeingProfile()
+
+    // Set by the recap flow when a life-defense suggestion is on screen.
+    var pendingSuggestion: Suggestion?
 
     init(voice: SpeechSynthesizing) {
         self.voice = voice
@@ -22,9 +26,28 @@ final class VoiceReplyCoordinator {
 
         switch PhraseMatcher.match(transcript) {
         case .dismiss:
+            if let suggestion = pendingSuggestion {
+                profile.recordSkipped(goal: suggestion.goal)
+                pendingSuggestion = nil
+            }
             return
-        case .sendIt, .hold, .blockIt:
-            // Draft/block actions land with MH-18; acknowledge honestly.
+        case .blockIt:
+            guard let suggestion = pendingSuggestion else {
+                try? await voice.speak("Nothing on the table to block right now.")
+                return
+            }
+            let blocked = await GoogleCalendarAPI.insertEvent(
+                title: suggestion.blockTitle,
+                start: suggestion.slot.start, end: suggestion.slot.end)
+            if blocked {
+                profile.recordKept(goal: suggestion.goal)
+                pendingSuggestion = nil
+                try? await voice.speak("Done — \(suggestion.blockTitle) is on your calendar. Defend it.")
+            } else {
+                try? await voice.speak("I couldn't reach your calendar — try me again in a minute.")
+            }
+        case .sendIt, .hold:
+            // Draft actions arrive with the draft system; acknowledge honestly.
             try? await voice.speak("Noted. That action unlocks with the next build.")
         case .other(let question):
             guard let agent = JarvisAgent.make() else { return }

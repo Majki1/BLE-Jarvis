@@ -5,13 +5,13 @@ import Foundation
 // LLM credits. (An agent-polished variant can layer on top for the demo.)
 enum RecapComposer {
     static func compose(userName: String, departedAt: Date, returnedAt: Date,
-                        items: [AwayItem]) -> RecapSession {
+                        items: [AwayItem], suggestion: Suggestion? = nil) -> RecapSession {
         let clock = DateFormatter()
         clock.dateFormat = "HH:mm"
         let away = Self.duration(departedAt, returnedAt)
         let summary = "Away \(away) · \(clock.string(from: departedAt)) → \(clock.string(from: returnedAt))"
 
-        let cards: [RecapCard]
+        var cards: [RecapCard]
         if items.isEmpty {
             cards = [RecapCard(kind: .news, label: "QUIET", time: clock.string(from: returnedAt),
                                title: "All quiet while you were out",
@@ -24,17 +24,37 @@ enum RecapComposer {
             }
         }
 
-        return RecapSession(
+        if let suggestion {
+            cards.append(RecapCard(
+                kind: .calendar, label: "FOR YOU",
+                time: clock.string(from: suggestion.slot.start),
+                title: "\(suggestion.blockTitle)?",
+                meta: suggestion.text,
+                needsYou: true,
+                actions: ("Block it", "Skip")))
+        }
+
+        var session = RecapSession(
             userName: userName,
             awaySummary: summary,
-            caption: spokenScript(for: RecapSession(
-                userName: userName, awaySummary: summary, caption: "",
-                handled: items.count, drafts: 0, needsYou: 0, cards: cards)),
-            handled: items.count, drafts: 0, needsYou: 0,
+            caption: "",
+            handled: items.count, drafts: 0,
+            needsYou: suggestion == nil ? 0 : 1,
             cards: cards)
+        session.caption = spokenScript(for: session, suggestion: suggestion)
+        return session
     }
 
-    static func spokenScript(for session: RecapSession) -> String {
+    static func spokenScript(for session: RecapSession,
+                             suggestion: Suggestion? = nil) -> String {
+        var script = baseScript(for: session)
+        if let suggestion {
+            script += " One more thing — \(suggestion.text) Say block it, and that time is yours."
+        }
+        return script
+    }
+
+    private static func baseScript(for session: RecapSession) -> String {
         guard session.handled > 0 else {
             return "Welcome back. All quiet — nothing happened while you were out."
         }
