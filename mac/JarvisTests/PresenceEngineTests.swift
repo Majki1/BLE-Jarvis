@@ -8,7 +8,8 @@ struct PresenceEngineTests {
 
     func makeEngine() -> (PresenceEngine, Recorded) {
         let recorded = Recorded()
-        let engine = PresenceEngine(rssiThreshold: -75, graceInterval: 45)
+        let engine = PresenceEngine(arriveThreshold: -60, holdThreshold: -80,
+                                    graceInterval: 45)
         engine.onEvent = { recorded.events.append($0) }
         return (engine, recorded)
     }
@@ -32,6 +33,34 @@ struct PresenceEngineTests {
         engine.recordSighting(rssi: -90, at: t0)
         #expect(engine.state == .unknown)
         #expect(rec.events.isEmpty)
+    }
+
+    // Hysteresis: a signal strong enough to *hold* presence is not strong
+    // enough to *trigger* arrival — you must come close to arrive, but you
+    // can drift around the room without departing.
+    @Test func midStrengthSightingDoesNotTriggerArrival() {
+        let (engine, rec) = makeEngine()
+        engine.recordSighting(rssi: -70, at: t0)
+        #expect(engine.state == .unknown)
+        #expect(rec.events.isEmpty)
+    }
+
+    @Test func midStrengthSightingHoldsExistingPresence() {
+        let (engine, rec) = makeEngine()
+        engine.recordSighting(rssi: -50, at: t0)
+        engine.recordSighting(rssi: -70, at: t0.addingTimeInterval(40))
+        engine.tick(at: t0.addingTimeInterval(60))
+        #expect(engine.state == .present)
+        #expect(rec.events == [.arrived])
+    }
+
+    @Test func belowHoldSightingDoesNotHoldPresence() {
+        let (engine, rec) = makeEngine()
+        engine.recordSighting(rssi: -50, at: t0)
+        engine.recordSighting(rssi: -85, at: t0.addingTimeInterval(40))
+        engine.tick(at: t0.addingTimeInterval(50))
+        #expect(engine.state == .away)
+        #expect(rec.events == [.arrived, .departed])
     }
 
     @Test func repeatedSightingsEmitArrivedOnce() {
@@ -61,7 +90,7 @@ struct PresenceEngineTests {
         let (engine, rec) = makeEngine()
         engine.recordSighting(rssi: -60, at: t0)
         engine.tick(at: t0.addingTimeInterval(60))
-        engine.recordSighting(rssi: -62, at: t0.addingTimeInterval(120))
+        engine.recordSighting(rssi: -55, at: t0.addingTimeInterval(120))
         #expect(engine.state == .present)
         #expect(rec.events == [.arrived, .departed, .arrived])
     }

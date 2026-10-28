@@ -24,24 +24,32 @@ final class PresenceEngine {
     private(set) var state: State = .unknown
     var onEvent: ((PresenceEvent) -> Void)?
 
-    private let rssiThreshold: Int
+    // Hysteresis: arrival needs a desk-strength signal; once present, a much
+    // weaker signal keeps you present. Prevents both far-away greetings and
+    // twitchy departures when you lean back.
+    private let arriveThreshold: Int
+    private let holdThreshold: Int
     private let graceInterval: TimeInterval
     private var lastQualifyingSighting: Date?
 
-    init(rssiThreshold: Int = -75, graceInterval: TimeInterval = 45) {
-        self.rssiThreshold = rssiThreshold
+    init(arriveThreshold: Int = -60, holdThreshold: Int = -80,
+         graceInterval: TimeInterval = 45) {
+        self.arriveThreshold = arriveThreshold
+        self.holdThreshold = holdThreshold
         self.graceInterval = graceInterval
     }
 
     func recordSighting(rssi: Int, at date: Date) {
-        presenceLog.debug("sighting rssi=\(rssi) threshold=\(self.rssiThreshold)")
-        guard rssi >= rssiThreshold else { return }
-        lastQualifyingSighting = date
-        if state != .present {
-            presenceLog.info("ARRIVED (rssi \(rssi))")
-            state = .present
-            onEvent?(.arrived)
+        presenceLog.debug("sighting rssi=\(rssi) arrive>=\(self.arriveThreshold) hold>=\(self.holdThreshold)")
+        if state == .present {
+            if rssi >= holdThreshold { lastQualifyingSighting = date }
+            return
         }
+        guard rssi >= arriveThreshold else { return }
+        lastQualifyingSighting = date
+        presenceLog.info("ARRIVED (rssi \(rssi))")
+        state = .present
+        onEvent?(.arrived)
     }
 
     func tick(at date: Date) {
