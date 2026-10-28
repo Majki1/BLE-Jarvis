@@ -19,7 +19,11 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.10"
-        CODE_SIGN_IDENTITY: "-"
+        # Stable dev signing so TCC (Bluetooth/mic) permissions survive
+        # rebuilds; falls back to ad-hoc on machines without the identity.
+        CODE_SIGN_IDENTITY: "Apple Development"
+        DEVELOPMENT_TEAM: 359R7KZAFR
+        CODE_SIGN_STYLE: Automatic
         ENABLE_HARDENED_RUNTIME: NO
   JarvisTests:
     type: bundle.unit-test

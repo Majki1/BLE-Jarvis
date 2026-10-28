@@ -8,7 +8,13 @@ struct JarvisApp: App {
     private let recapWindow = RecapWindowController()
 
     init() {
-        let engine = PresenceEngine()
+        // Tunables overridable per-machine without rebuilds:
+        //   defaults write com.msoft.blejarvis.Jarvis graceSeconds -int 15
+        let defaults = UserDefaults.standard
+        let engine = PresenceEngine(
+            arriveThreshold: defaults.object(forKey: "arriveRSSI") as? Int ?? -60,
+            holdThreshold: defaults.object(forKey: "holdRSSI") as? Int ?? -80,
+            graceInterval: defaults.object(forKey: "graceSeconds") as? TimeInterval ?? 45)
         _engine = State(initialValue: engine)
         let scanner = PresenceScanner(engine: engine)
         _scanner = State(initialValue: scanner)
