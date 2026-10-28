@@ -24,19 +24,29 @@ struct JarvisApp: App {
             voice: ElevenLabsSynthesizer(fallback: SystemSynthesizer()))
         _performer = State(initialValue: performer)
 
-        // Arrival pipeline (MH-7): first arrival of the day gets the full
+        // Arrival pipeline (MH-7/8): first arrival of the day gets the full
         // music-backed briefing composed live by the agent; later arrivals
-        // get the recap window and a short line. Recap *content* is sample
-        // data until MH-8's away-mode triage lands.
+        // get a recap of what the away-watcher collected while you were out.
         let recapWindow = recapWindow
         let planner = ArrivalPlanner()
+        let watcher = AwayWatcher(
+            sources: [JiraChangeSource()],
+            pollInterval: defaults.object(forKey: "awayPollSeconds") as? TimeInterval ?? 60)
+        let userName = defaults.string(forKey: "userName") ?? "Marin"
         engine.onEvent = { event in
             if event == .departed {
-                // Visible departure: the recap window leaves with you.
-                Task { @MainActor in recapWindow.hide() }
+                // Visible departure: the recap window leaves with you and the
+                // watcher starts collecting.
+                Task { @MainActor in
+                    recapWindow.hide()
+                    watcher.start(departedAt: Date())
+                }
                 return
             }
             Task { @MainActor in
+                let departedAt = watcher.departedAt
+                let items = watcher.items
+                watcher.stop()
                 switch planner.momentForArrival() {
                 case .morningBriefing:
                     recapWindow.show(session: .sample)
@@ -48,8 +58,14 @@ struct JarvisApp: App {
                             "I just arrived at my desk this morning. Compose my morning briefing.")
                     }
                 case .returnRecap:
-                    recapWindow.show(session: .sample)
-                    await performer.perform(script: "Welcome back.", withMusic: false)
+                    let session = RecapComposer.compose(
+                        userName: userName.uppercased(),
+                        departedAt: departedAt ?? Date(),
+                        returnedAt: Date(),
+                        items: items)
+                    recapWindow.show(session: session)
+                    await performer.perform(script: RecapComposer.spokenScript(for: session),
+                                            withMusic: false)
                 }
             }
         }
