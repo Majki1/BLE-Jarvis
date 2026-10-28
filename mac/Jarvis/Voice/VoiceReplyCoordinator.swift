@@ -12,6 +12,7 @@ final class VoiceReplyCoordinator {
 
     // Set by the recap flow when a life-defense suggestion is on screen.
     var pendingSuggestion: Suggestion?
+    var transcript: TranscriptStore?
 
     init(voice: SpeechSynthesizing) {
         self.voice = voice
@@ -23,6 +24,7 @@ final class VoiceReplyCoordinator {
         guard let transcript = try? await transcriber.transcribe(wav: wav),
               !transcript.isEmpty else { return }
         presenceLog.info("voice heard: \(transcript)")
+        self.transcript?.record(kind: .voice, title: "You said: \(transcript)", meta: "")
 
         switch PhraseMatcher.match(transcript) {
         case .dismiss:
@@ -42,6 +44,8 @@ final class VoiceReplyCoordinator {
             if blocked {
                 profile.recordKept(goal: suggestion.goal)
                 pendingSuggestion = nil
+                self.transcript?.record(kind: .life, title: "Blocked: \(suggestion.blockTitle)",
+                                        meta: "written to your calendar")
                 try? await voice.speak("Done — \(suggestion.blockTitle) is on your calendar. Defend it.")
             } else {
                 try? await voice.speak("I couldn't reach your calendar — try me again in a minute.")
@@ -53,6 +57,8 @@ final class VoiceReplyCoordinator {
             guard let agent = JarvisAgent.make() else { return }
             let reply = (try? await agent.run(question))
                 ?? "I couldn't reach my brain for that one."
+            self.transcript?.record(kind: .voice, title: "Jarvis: \(String(reply.prefix(80)))",
+                                    meta: "")
             try? await voice.speak(reply)
         }
     }

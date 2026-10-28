@@ -11,6 +11,10 @@
       "bundleIdentifier": "com.msoft.blejarvis.mobile",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "BLE Jarvis advertises a Bluetooth signal so your Mac knows when you're at your desk.",
+        "NSLocalNetworkUsageDescription": "BLE Jarvis syncs your activity feed and settings with the Jarvis app on your Mac over your local network.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
         "UIBackgroundModes": [
           "bluetooth-peripheral"
         ]

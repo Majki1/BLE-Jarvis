@@ -2,15 +2,22 @@ import { Pressable, Text, View } from "react-native";
 import { Card, MonoLabel, PingRings, ScreenHeader } from "../components";
 import { colors, type } from "../theme";
 import { BeaconState } from "../../modules/jarvis-beacon/src/JarvisBeacon.types";
+import { DeskStatus } from "../jarvisLink";
 
 // Screen 1e: pairing/status — the beacon is the product's heartbeat.
 export function HomeScreen({
-  beacon, onToggleBeacon,
+  beacon, onToggleBeacon, desk,
 }: {
   beacon: BeaconState;
   onToggleBeacon: () => void;
+  desk: DeskStatus | null;
 }) {
   const active = beacon.advertising;
+  const deskLine = desk
+    ? desk.presence === "present" ? "sees you at your desk"
+      : desk.presence === "away" ? "working while you're out"
+      : "waiting for your signal"
+    : active ? "broadcasting presence" : "beacon paused";
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader label={active ? "BEACON ON" : "BEACON OFF"} title="Your desk" />
@@ -29,7 +36,7 @@ export function HomeScreen({
         <View style={{ flex: 1, gap: 3 }}>
           <Text style={type.itemTitle}>Jarvis Desk</Text>
           <Text style={[type.mono, { color: active ? colors.cyan : colors.textFaint }]}>
-            {active ? "broadcasting presence" : "beacon paused"}
+            {deskLine}
             {beacon.error ? ` · ${beacon.error}` : ""}
           </Text>
         </View>
